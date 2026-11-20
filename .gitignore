@@ -1,0 +1,9 @@
+data/shipyard.json
+data/*.tmp
+data/builds/
+node_modules/
+.env*
+!.env.production.example
+runtime/
+backups/
+*.log

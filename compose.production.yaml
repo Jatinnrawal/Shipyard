@@ -1,0 +1,75 @@
+services:
+  shipyard:
+    build:
+      context: .
+      args:
+        KUBECTL_VERSION: ${KUBECTL_VERSION:-v1.36.5}
+        DOCKER_CLI_VERSION: ${DOCKER_CLI_VERSION:-29.9.3}
+        HELM_VERSION: ${HELM_VERSION:-v4.3.1}
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=1g
+    expose:
+      - "4173"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4173
+      SHIPYARD_ALLOW_REMOTE: "1"
+      SHIPYARD_COOKIE_SECURE: "1"
+      SHIPYARD_TRUST_PROXY: "1"
+      SHIPYARD_MAX_CONCURRENT_RELEASES: ${SHIPYARD_MAX_CONCURRENT_RELEASES:-2}
+      SHIPYARD_DATA_DIR: /var/lib/shipyard
+      HELM_CACHE_HOME: /tmp/helm/cache
+      HELM_CONFIG_HOME: /tmp/helm/config
+      HELM_DATA_HOME: /tmp/helm/data
+      SHIPYARD_PUBLIC_URL: ${SHIPYARD_PUBLIC_URL:?Set SHIPYARD_PUBLIC_URL in .env.production}
+      SHIPYARD_ALLOW_SIGNUP: ${SHIPYARD_ALLOW_SIGNUP:-0}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      SHIPYARD_FROM_EMAIL: ${SHIPYARD_FROM_EMAIL:-}
+    volumes:
+      - shipyard-data:/var/lib/shipyard
+      - ./runtime/ssh:/root/.ssh:ro
+      - ./runtime/kube:/root/.kube:ro
+      - ./runtime/docker:/root/.docker
+      - ./runtime/env:/run/shipyard/env:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - shipyard-private
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      shipyard:
+        condition: service_healthy
+    environment:
+      SHIPYARD_DOMAIN: ${SHIPYARD_DOMAIN:?Set SHIPYARD_DOMAIN in .env.production}
+      SHIPYARD_BASIC_AUTH_USER: ${SHIPYARD_BASIC_AUTH_USER:?Set SHIPYARD_BASIC_AUTH_USER in .env.production}
+      SHIPYARD_BASIC_AUTH_HASH: ${SHIPYARD_BASIC_AUTH_HASH:?Set SHIPYARD_BASIC_AUTH_HASH in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - shipyard-private
+
+networks:
+  shipyard-private:
+    name: shipyard-private
+
+volumes:
+  shipyard-data:
+  caddy-data:
+  caddy-config:

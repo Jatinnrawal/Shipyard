@@ -1,0 +1,23 @@
+{$SHIPYARD_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	}
+
+	@public path /api/webhooks/* /api/health
+	handle @public {
+		reverse_proxy shipyard:4173
+	}
+
+	handle {
+		basic_auth {
+			{$SHIPYARD_BASIC_AUTH_USER} {$SHIPYARD_BASIC_AUTH_HASH}
+		}
+		reverse_proxy shipyard:4173
+	}
+}

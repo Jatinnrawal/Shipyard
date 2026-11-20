@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f2f2f0">
+  <title>Shipyard — release control</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell" hidden>
+    <header class="topbar">
+      <a class="brand" href="#overview" aria-label="Shipyard overview">
+        <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4.5" y="6.5" width="23" height="19" rx="2.5"/><path d="M10.25 7v18M16 7v18M21.75 7v18M5 13h22M5 19h22"/></svg></span>
+        <span class="brand-word">shipyard<span>.</span></span>
+      </a>
+      <nav class="top-nav" aria-label="Main navigation">
+        <button class="nav-item active" data-view="overview"><span class="nav-icon">◫</span> Overview</button>
+        <button class="nav-item" data-view="services"><span class="nav-icon">▣</span> Services <span class="nav-count" id="service-count">0</span></button>
+        <button class="nav-item" data-view="deployments"><span class="nav-icon">⇧</span> Releases</button>
+        <button class="nav-item" data-view="activity"><span class="nav-icon">◷</span> Activity</button>
+        <button class="nav-item" data-view="toolkit"><span class="nav-icon">⌘</span> Toolkit</button>
+      </nav>
+      <div class="top-actions"><span class="system-status"><i></i><span id="system-status-text">Control plane ready</span></span><button class="button button-dark button-small" data-action="add-service"><span class="plus">＋</span> New service</button><div class="account-wrap"><button class="avatar" id="account-button" data-action="account-menu-toggle" aria-label="Open account menu" aria-haspopup="menu" aria-expanded="false" title="Account menu">S</button><div class="account-menu" id="account-menu" role="menu" hidden><div class="account-menu-user"><strong id="account-name">Account</strong><span id="account-email"></span><span id="workspace-menu-name"></span></div><button type="button" data-action="account-settings" role="menuitem">Account &amp; security</button><button type="button" data-action="workspace-settings" role="menuitem">Workspace settings</button><button type="button" data-action="google-settings" role="menuitem">Google sign-in settings</button><button type="button" data-action="open-help" role="menuitem">Help &amp; shortcuts</button><div class="account-menu-divider"></div><button type="button" data-action="logout" role="menuitem">Sign out</button></div></div></div>
+    </header>
+    <main id="view" class="page-content" tabindex="-1"></main>
+  </div>
+
+  <main id="auth-gate" class="auth-shell">
+    <section class="auth-card">
+      <a class="brand auth-brand" href="#" aria-label="Shipyard">
+        <span class="brand-mark"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="4.5" y="6.5" width="23" height="19" rx="2.5"/><path d="M10.25 7v18M16 7v18M21.75 7v18M5 13h22M5 19h22"/></svg></span>
+        <span class="brand-word">shipyard<span>.</span></span>
+      </a>
+      <div id="auth-loading" class="auth-state"><div class="auth-kicker">RELEASE OPERATIONS</div><h1>Loading Shipyard…</h1></div>
+      <section id="auth-setup" class="auth-state" hidden>
+        <div class="auth-kicker">SIGN-IN SETTINGS</div><h1>Connect Google sign-in</h1>
+        <p>Google requires a web client ID for this Shipyard installation. Create a Web application OAuth client and add this authorized JavaScript origin:</p>
+        <code id="auth-origin" class="origin-code">http://localhost:4173</code>
+        <a class="console-link" href="https://console.cloud.google.com/auth/clients" target="_blank" rel="noopener">Open Google Cloud Console ↗</a>
+        <p class="setup-hint">Create or select a project → create an OAuth client ID (Web application) → add the origin above → copy the client ID ending in <span class="mono">.apps.googleusercontent.com</span>. If the consent screen is in Testing mode, add your Google account as a test user.</p>
+        <form id="client-form" class="client-form"><label for="client-id-input">Google web client ID</label><input id="client-id-input" name="clientId" placeholder="1234567890-abc.apps.googleusercontent.com" autocomplete="off" required><button class="button button-dark" type="submit">Save client ID</button><div id="client-error" class="form-error" hidden></div></form>
+        <button class="text-link auth-back" data-action="show-login">Back to sign in</button>
+      </section>
+      <section id="auth-login" class="auth-state" hidden>
+        <div class="auth-kicker">RELEASE OPERATIONS</div><h1>Welcome back</h1><p>Sign in to open your Shipyard workspace.</p>
+        <form id="login-form" class="auth-form">
+          <label>Email<input name="email" type="email" autocomplete="username" placeholder="you@example.com" maxlength="254" required></label>
+          <label>Password<input name="password" type="password" autocomplete="current-password" placeholder="Your password" maxlength="128" required></label>
+          <div class="auth-form-meta"><span></span><button type="button" class="text-link" data-action="show-forgot">Forgot password?</button></div>
+          <button class="button button-dark auth-submit" type="submit">Sign in</button><div id="login-error" class="form-error" hidden></div>
+        </form>
+        <div class="auth-switch" id="login-signup-switch">New to Shipyard? <button class="text-link" data-action="show-signup">Create an account</button></div>
+      </section>
+      <section id="auth-signup" class="auth-state" hidden>
+        <div class="auth-kicker">GET STARTED</div><h1>Create your account</h1><p>Set up your Shipyard sign-in for this installation.</p>
+        <p id="signup-closed" class="auth-closed" hidden>Account creation is closed on this Shipyard installation. Ask its administrator for access.</p>
+        <form id="signup-form" class="auth-form">
+          <label>Name<input name="name" autocomplete="name" placeholder="Your name" maxlength="80" required></label>
+          <label>Email<input name="email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required></label>
+          <label>Password<input name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" maxlength="128" required></label>
+          <button class="button button-dark auth-submit" type="submit">Create account</button><div id="signup-error" class="form-error" hidden></div>
+        </form>
+        <div class="auth-switch">Already have an account? <button class="text-link" data-action="show-login">Sign in</button></div>
+      </section>
+      <section id="auth-forgot" class="auth-state" hidden>
+        <div class="auth-kicker">ACCOUNT RECOVERY</div><h1>Reset your password</h1><p>Enter the email address for your Shipyard account.</p>
+        <form id="forgot-form" class="auth-form">
+          <label>Email<input name="email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required></label>
+          <button class="button button-dark auth-submit" type="submit">Send reset link</button><div id="forgot-message" class="auth-message" hidden></div><div id="forgot-error" class="form-error" hidden></div>
+        </form>
+        <p class="google-recovery">If you use Google sign-in, recover that password through <a href="https://accounts.google.com/signin/recovery" target="_blank" rel="noopener">Google Account recovery ↗</a></p>
+        <div class="auth-switch"><button class="text-link" data-action="show-login">Back to sign in</button></div>
+      </section>
+      <section id="auth-reset" class="auth-state" hidden>
+        <div class="auth-kicker">ACCOUNT RECOVERY</div><h1>Choose a new password</h1><p>Set a new password for your Shipyard account.</p>
+        <form id="reset-form" class="auth-form">
+          <label>New password<input name="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" minlength="8" maxlength="128" required></label>
+          <label>Confirm password<input name="confirm" type="password" autocomplete="new-password" placeholder="Enter it again" minlength="8" maxlength="128" required></label>
+          <button class="button button-dark auth-submit" type="submit">Update password</button><div id="reset-error" class="form-error" hidden></div>
+        </form>
+      </section>
+      <div id="auth-social" class="auth-social" hidden>
+        <div class="auth-divider"><span></span>or continue with<span></span></div>
+        <div id="google-button" class="google-button"></div>
+        <div id="google-error" class="form-error" hidden></div>
+        <button id="google-config-link" class="text-link" data-action="configure-google" hidden>Set up Google sign-in</button>
+        <button id="google-change-link" class="text-link" data-action="change-google-client" hidden>Google sign-in settings</button>
+      </div>
+      <div class="auth-foot">Accounts on this installation share its Shipyard workspace.</div>
+    </section>
+  </main>
+
+  <dialog id="service-dialog" class="dialog dialog-wide">
+    <div class="dialog-head"><div><div class="eyebrow">CONNECT A REPOSITORY</div><h2 id="service-dialog-title">New deployment service</h2><p id="service-dialog-description">Choose whether Shipyard deploys over SSH, builds and deploys to Kubernetes, installs a Helm chart, or triggers Jenkins to run the pipeline.</p></div><button class="icon-button" data-action="close-dialog" aria-label="Close">×</button></div>
+    <form id="service-form">
+      <div class="form-section-title"><span>01</span> SOURCE</div>
+      <div class="form-grid">
+        <label class="field"><span>Service name</span><input name="name" placeholder="Payments API" required maxlength="60"></label>
+        <label class="field"><span>Branch to deploy</span><input name="branch" value="main" required></label>
+        <label class="field field-full"><span>Deployment method</span><select name="deployMode"><option value="compose-ssh">Docker Compose on an SSH server</option><option value="kubernetes">Kubernetes manifests</option><option value="helm">Kubernetes with a Helm chart</option><option value="jenkins">Run a Jenkins pipeline</option></select><small>Kubernetes builds on the Shipyard host and pushes to your registry. Helm mode requires a compatible chart in the repository. Jenkins runs the pipeline on its configured agent.</small></label>
+        <label class="field field-full"><span>Git clone URL</span><input name="repoUrl" placeholder="https://github.com/acme/payments-api.git" required><small>Use Git's existing SSH agent or credential manager for private repositories.</small></label>
+      </div>
+      <div class="target-fields" data-target-fields="compose-ssh">
+        <div class="form-section-title"><span>02</span> SSH SERVER</div>
+        <div class="form-grid">
+          <label class="field"><span>Server host / IP</span><input name="host" placeholder="203.0.113.10" data-required></label>
+          <label class="field"><span>SSH username</span><input name="sshUser" placeholder="deploy" data-required></label>
+          <label class="field field-full"><span>SSH private key path <em>on the Shipyard host</em></span><input name="keyPath" placeholder="/root/.ssh/deploy_key" data-required><small>Use an absolute path visible to the process running Shipyard. Shipyard uses your key through OpenSSH; key contents are never copied or stored.</small></label>
+          <label class="field field-full"><span>App folder on server</span><input name="remotePath" placeholder="/opt/apps/payments-api" data-required></label>
+          <label class="field"><span>Compose file</span><input name="composeFile" value="compose.yaml" data-required></label>
+          <label class="field"><span>Pre-deploy check <em>optional</em></span><input name="testCommand" placeholder="npm test"><small>Runs on the server from the checked-out repository.</small></label>
+          <label class="field field-full"><span>Environment file <em>optional, on the Shipyard host</em></span><input name="envFile" placeholder="/run/shipyard/env/payments-api.env"><small>Use an absolute path visible to Shipyard. It is copied to the app folder over SSH and restricted to the SSH user.</small></label>
+        </div>
+      </div>
+      <div class="target-fields" data-target-fields="kubernetes" hidden>
+        <div class="form-section-title"><span>02</span> KUBERNETES CLUSTER</div>
+        <div class="form-grid">
+          <label class="field field-full" data-helm-only hidden><span>Helm chart folder</span><input name="chartPath" placeholder="helm/payments-api"><small>Path to a Helm chart inside the repository. Toolkit generated charts are compatible.</small></label>
+          <label class="field field-full"><span>Kubeconfig path <em>on the Shipyard host</em></span><input name="kubeconfigPath" placeholder="/root/.kube/config" data-required><small>Use an absolute path visible to the process running Shipyard. The kubeconfig contents are never copied into the workspace.</small></label>
+          <label class="field"><span>Context <em>optional</em></span><input name="kubeContext" placeholder="docker-desktop"></label>
+          <label class="field"><span>Namespace</span><input name="namespace" value="shipyard" data-required><small>Shipyard creates this namespace when it does not exist.</small></label>
+          <label class="field field-full"><span>Container image repository</span><input name="imageRepository" placeholder="ghcr.io/your-name/your-app" data-required><small>Sign Docker in to this registry first, for example with <code>docker login ghcr.io</code>.</small></label>
+          <label class="field"><span>Replicas</span><input name="replicas" type="number" min="1" max="20" value="2" data-required></label>
+          <label class="field"><span>Public exposure</span><select name="k8sExposure"><option value="internal">Internal only</option><option value="load-balancer">LoadBalancer service</option><option value="ingress">Ingress hostname</option></select><small>LoadBalancer needs a cluster that can provision an external address. Ingress needs an installed controller.</small></label>
+          <label class="field field-full"><span>Image pull secret <em>optional</em></span><input name="imagePullSecret" placeholder="ghcr-pull"><small>Existing Docker registry Secret in the selected namespace. Needed when the cluster cannot pull a public image.</small></label>
+        </div>
+        <div class="form-grid k8s-ingress-fields" data-k8s-ingress hidden>
+          <label class="field"><span>Ingress hostname</span><input name="ingressHost" placeholder="app.example.com" data-required><small>Point your DNS record at the ingress controller's external address.</small></label>
+          <label class="field"><span>Ingress class <em>optional</em></span><input name="ingressClassName" placeholder="nginx"><small>For example, nginx or traefik.</small></label>
+          <label class="field field-full"><span>TLS Secret name <em>optional</em></span><input name="ingressTlsSecret" placeholder="app-example-com-tls"><small>Existing kubernetes.io/tls Secret in this namespace. Shipyard does not issue certificates.</small></label>
+        </div>
+        <div class="info-note"><span>!</span><div><b>Uses the Shipyard host</b><p>Docker Engine, Git, kubectl, a reachable cluster, permission to create the namespace if it is missing, and registry push access are required. Shipyard builds the repository Dockerfile on its host, then pushes the image. LoadBalancer or Ingress exposes traffic through your cluster; DNS, the controller, cloud load balancer, and certificates remain your cluster's responsibility. Only deploy trusted repositories.</p></div></div>
+      </div>
+      <div class="target-fields" data-target-fields="jenkins" hidden>
+        <div class="form-section-title"><span>02</span> JENKINS PIPELINE</div>
+        <div class="form-grid">
+          <label class="field field-full"><span>Jenkins URL</span><input name="jenkinsUrl" placeholder="https://jenkins.example.com" data-required><small>Use HTTPS so your API token is encrypted in transit.</small></label>
+          <label class="field"><span>Job path</span><input name="jenkinsJob" placeholder="folder/release-app" data-required></label>
+          <label class="field"><span>Jenkins username</span><input name="jenkinsUser" placeholder="your-jenkins-user" data-required></label>
+          <label class="field field-full"><span>API token environment variable</span><input name="jenkinsTokenEnv" value="SHIPYARD_JENKINS_TOKEN" data-required><small>Set this variable before starting Shipyard. Its secret value is never saved in Shipyard's data file.</small></label>
+          <label class="field field-full"><span>Container image repository</span><input name="imageRepository" placeholder="ghcr.io/your-name/your-app" data-required></label>
+          <label class="field"><span>Kubernetes namespace</span><input name="namespace" value="default" data-required></label>
+        </div>
+        <div class="info-note"><span>!</span><div><b>Jenkins must be prepared</b><p>Configure this job from the repository's Jenkinsfile, set it to the same branch, install Docker and kubectl on its agent, and grant registry and cluster access to that agent.</p></div></div>
+      </div>
+      <div class="form-section-title"><span>03</span> APPLICATION HEALTH</div>
+      <div class="form-grid">
+        <label class="field"><span>App port</span><input type="number" name="healthPort" value="8080" min="1" max="65535" required><small>Compose: host-published port. Kubernetes: container port. Used for the rollout health check.</small></label>
+        <label class="field"><span>Health path</span><input name="healthPath" value="/" required></label>
+      </div>
+      <div id="form-error" class="form-error" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-action="close-dialog">Cancel</button><button class="button button-primary" id="service-submit-button" type="submit"><span>Connect service</span><span>→</span></button></div>
+    </form>
+  </dialog>
+
+  <dialog id="webhook-dialog" class="dialog">
+    <div class="dialog-head"><div><div class="eyebrow">AUTOMATE RELEASES</div><h2>Connect GitHub</h2><p>In your repository, add a webhook for push events. The signature secret is shown once here.</p></div><button class="icon-button" data-action="close-webhook" aria-label="Close">×</button></div>
+    <div class="copy-field"><span>Payload URL</span><code id="webhook-url"></code><button class="copy-button" data-copy="webhook-url">Copy</button></div>
+    <div class="copy-field"><span>Secret</span><code id="webhook-secret"></code><button class="copy-button" data-copy="webhook-secret">Copy</button></div>
+    <div class="info-note"><span>↗</span><div><b>GitHub needs a reachable HTTPS URL.</b><p>GitHub must reach the public webhook path. Keep the dashboard private and allow only signed webhook requests through your proxy.</p></div></div>
+    <div class="dialog-actions"><button class="button button-primary" data-action="close-webhook">Done</button></div>
+  </dialog>
+
+  <dialog id="log-dialog" class="dialog dialog-log">
+    <div class="dialog-head"><div><div class="eyebrow">RELEASE OUTPUT</div><h2 id="log-title">Deployment logs</h2></div><button class="icon-button" data-action="close-logs" aria-label="Close">×</button></div>
+    <pre id="log-content" class="log-content"></pre>
+    <div class="dialog-actions"><button class="button button-quiet" data-action="close-logs">Close</button></div>
+  </dialog>
+  <dialog id="account-dialog" class="dialog">
+    <div class="dialog-head"><div><div class="eyebrow">ACCOUNT &amp; SECURITY</div><h2>Your account</h2><p>Update your Shipyard profile and local account password.</p></div><button class="icon-button" data-action="close-account" aria-label="Close">×</button></div>
+    <form id="account-form">
+      <label class="field settings-field"><span>Display name</span><input id="account-name-input" name="name" maxlength="80" autocomplete="name" required></label>
+      <div class="settings-account-meta"><span>Email</span><strong id="account-email-value"></strong><span>Sign-in method</span><strong id="account-provider-value"></strong></div>
+      <div id="account-password-fields" class="settings-password-fields" hidden>
+        <div class="form-section-title"><span>01</span> CHANGE PASSWORD</div>
+        <label class="field settings-field"><span>Current password</span><input name="currentPassword" type="password" autocomplete="current-password" maxlength="128"></label>
+        <label class="field settings-field"><span>New password</span><input name="newPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"><small>Leave both password fields empty to keep your current password.</small></label>
+        <label class="field settings-field"><span>Confirm new password</span><input name="confirmPassword" type="password" autocomplete="new-password" minlength="8" maxlength="128"></label>
+      </div>
+      <div id="google-password-note" class="info-note" hidden><span>ⓘ</span><div><b>Google manages your password</b><p>Change your password and two-step verification in <a href="https://myaccount.google.com/security" target="_blank" rel="noopener">Google Account security ↗</a>.</p></div></div>
+      <div id="account-form-error" class="form-error" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-action="close-account">Cancel</button><button class="button button-primary" type="submit">Save account</button></div>
+    </form>
+  </dialog>
+  <dialog id="workspace-dialog" class="dialog">
+    <div class="dialog-head"><div><div class="eyebrow">WORKSPACE SETTINGS</div><h2>Workspace</h2><p>Name this local Shipyard workspace and save a copy of its data.</p></div><button class="icon-button" data-action="close-workspace" aria-label="Close">×</button></div>
+    <form id="workspace-form">
+      <label class="field settings-field"><span>Workspace name</span><input id="workspace-name-input" name="name" maxlength="60" autocomplete="off" required></label>
+      <div id="workspace-form-error" class="form-error" hidden></div>
+      <div class="dialog-actions"><button type="button" class="button button-quiet" data-action="close-workspace">Cancel</button><button class="button button-primary" type="submit">Save workspace</button></div>
+    </form>
+    <section class="backup-section"><h3>Workspace backup</h3><p>Download a JSON copy of your Shipyard data. It can contain account password hashes, reset tokens, and service credentials such as webhook secrets, so keep the file private.</p><button type="button" class="button button-quiet" data-action="download-backup">Download backup</button></section>
+  </dialog>
+  <dialog id="help-dialog" class="dialog dialog-help">
+    <div class="dialog-head"><div><div class="eyebrow">SHIPYARD GUIDE</div><h2>Help &amp; shortcuts</h2><p>A quick guide to what this local release control plane can do.</p></div><button class="icon-button" data-action="close-help" aria-label="Close">×</button></div>
+    <div class="help-content">
+      <h3>Release flow</h3><ol><li>Connect a Git repository from <b>New service</b>.</li><li>Choose Docker Compose over SSH, Kubernetes manifests, a Helm chart, or a Jenkins pipeline.</li><li>Configure access on the Shipyard host and the target, then deploy from Services or service details.</li><li>Review build, deploy, and health-check output in the release logs. Kubernetes and Helm releases can roll back a failed update.</li></ol>
+      <p class="help-note">The Toolkit generates starter Docker, CI, Jenkins, Kubernetes, and Helm files. Shipyard can directly deploy Docker Compose, Kubernetes manifests, and compatible Helm charts; Jenkins runs your pipeline. It does not create cloud accounts, servers, clusters, DNS, or certificates.</p>
+      <h3>Keyboard shortcuts</h3><div class="shortcut-list"><div><kbd>?</kbd><span>Open this help</span></div><div><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>1</kbd><span>Overview</span></div><div><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>2</kbd><span>Services</span></div><div><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>3</kbd><span>Releases</span></div><div><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>4</kbd><span>Activity</span></div><div><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>5</kbd><span>Toolkit</span></div><div><kbd>Esc</kbd><span>Close menu or dialog</span></div></div>
+    </div>
+    <div class="dialog-actions"><button class="button button-primary" data-action="close-help">Done</button></div>
+  </dialog>
+  <div id="toast-region" class="toast-region" aria-live="polite"></div>
+  <main id="file-open-notice" hidden>
+    <section class="file-notice-card">
+      <div class="file-notice-brand">shipyard<span>.</span></div>
+      <div class="file-notice-kicker">ONE QUICK STEP</div>
+      <h1>Start Shipyard first</h1>
+      <p>This page was opened as a file, so its deployment service is not running. Start the local app, then open it at its local address.</p>
+      <code>Double-click Start-Shipyard.cmd in the Shipyard folder</code>
+      <a href="http://localhost:4173">Open Shipyard</a>
+    </section>
+  </main>
+  <script src="./file-open.js"></script>
+  <script src="./toolkit.js" defer></script>
+  <script src="./app.js" defer></script>
+</body>
+</html>

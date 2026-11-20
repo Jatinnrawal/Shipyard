@@ -1,0 +1,15 @@
+{
+  "name": "shipyard-release-control",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-first Docker Compose, Kubernetes, and Jenkins deployment control plane",
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check public/app.js && node --check public/toolkit.js && node --check tests/server.test.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

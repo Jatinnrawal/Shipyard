@@ -1,0 +1,15 @@
+.git
+.gitignore
+.env*
+data/
+runtime/
+backups/
+scripts/
+node_modules/
+tests/
+examples/
+*.log
+README.md
+Start-Shipyard.cmd
+compose.production.yaml
+Caddyfile
